@@ -1,11 +1,11 @@
 {
-  "name": "my-app",
+  "name": "UKK_smt3_Gervil",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0 --port 8009",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --hostname 0.0.0.0 --port 8009",
     "lint": "eslint"
   },
   "dependencies": {
