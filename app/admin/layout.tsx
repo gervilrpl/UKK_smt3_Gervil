@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import { connection } from "next/server"
 import { redirect } from "next/navigation"
-
 import { getAuthenticatedUser } from "@/lib/auth"
 import { AppSidebar } from "@/app/components/sidebar/app-sidebar"
 
