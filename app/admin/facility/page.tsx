@@ -14,9 +14,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
  
-type ManagedUser = {
-    id: number
-    kodeUser: string | null
+type ManagedFacility = {
+    kodeFacility: string | null
     fullname: string
     email: string
     role: string

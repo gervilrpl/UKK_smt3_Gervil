@@ -25,34 +25,27 @@ model User {
  
   @@map("users")
 }
-model Facility {
-  kodeFacility String @unique @map("kode_facility") @db.VarChar(20)
-  nama_facility String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+model facility {
+  kodeFacility   String   @unique @map("kode_facility")
+  nama           String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
  
-  @@map("Facility")
-}
-
-model type_facility {
-  id        Int      @id @default(autoincrement())
-  nama_type_unit String
-  branch_id Int      @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
- 
-  @@map("type_facility")
+  @@map("tbl_facility")
 }
 model type_unit_facility {
-  id        Int      @id @default(autoincrement())
-  nama_type_unit String
-  branch_id Int      @unique
+  id        Int      @id @map("id_unit_type") @default(autoincrement())
+  kode      String   @unique @map("kode_facility")
+ 
+  @@map("tbl_type_unit_facility")
+}
+model unit_facility {
+  id        Int      @id @map("id_unit_type") @default(autoincrement())
+  nama      String    @map("nama_type_unit")
+  branch      Int      @default(0) @map("branch_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
- 
-  @@map("type_unit_facility")
+
+  @@map("tbl_type_unit")
 }
-
-
-
-
+ 

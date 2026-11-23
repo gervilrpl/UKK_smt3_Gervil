@@ -5,39 +5,31 @@ import { prisma } from "@/lib/prisma"
 import { createUserJwt, hashUserPassword } from "@/lib/user-security"
 
 const facilityFields = {
-  id: true,
   kodeFacility: true,
-  fullname: true,
-  email: true,
-  role: true,
+  nama: true,
   createdAt: true,
   updatedAt: true,
-  token: true,
 } as const
 
-function isDuplicateEmail(error: unknown) {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "P2002"
-}
-
 // PEMBUATAN AUTO NUMBER 
-async function generateKodeUser(tx: Prisma.TransactionClient, role: string) {
+async function generateKodeFacility(tx: Prisma.TransactionClient, role: string) {
   const prefix = "FCT"
 
-  const lastUser = await tx.user.findFirst({
+  const lastFacility = await tx.facility.findFirst({
     where: {
-      kodeUser: { startsWith: prefix },
+      kodeFacility: { startsWith: prefix },
     },
     orderBy: {
-      kodeUser: "desc",
+      kodeFacility: "desc",
     },
     select: { kodeFacility: true },
   })
 
-  if (!lastUser || !lastUser.kodeUser) {
+  if (!lastFacility || !lastFacility.kodeFacility) {
     return `${prefix}0000001`
   }
 
-  const numericPart = lastUser.kodeUser.slice(prefix.length)
+  const numericPart = lastFacility.kodeFacility.slice(prefix.length)
   const lastNumber = Number.parseInt(numericPart, 10)
   const nextNumber = Number.isNaN(lastNumber) ? 1 : lastNumber + 1
 
@@ -58,13 +50,13 @@ export async function GET(request: Request) {
     : 10
 
   try {
-    const totalUsers = await prisma.user.count()
-    const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize))
+    const totalFacility = await prisma.facility.count()
+    const totalPages = Math.max(1, Math.ceil(totalFacility / pageSize))
     const page = Number.isFinite(requestedPage) && requestedPage > 0
       ? Math.min(requestedPage, totalPages)
       : 1
 
-    const users = await prisma.user.findMany({
+    const facility = await prisma.facility.findMany({
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -72,15 +64,12 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json({
-      users: users.map(({ token, ...user }) => ({
-        ...user,
-        hasToken: Boolean(token),
-      })),
-      pagination: { page, pageSize, totalUsers, totalPages },
+      items:   facility,
+      pagination: { page, pageSize, totalFacility, totalPages },
     })
   } catch (error) {
-    console.error("Failed to fetch users:", error)
-    return NextResponse.json({ error: "Gagal memuat data user." }, { status: 500 })
+    console.error("Failed to fetch facility:", error)
+    return NextResponse.json({ error: "Gagal memuat data facility." }, { status: 500 })
   }
 }
 
@@ -97,62 +86,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Format request tidak valid." }, { status: 400 })
   }
 
-  const fullname = typeof body.fullname === "string" ? body.fullname.trim() : ""
-  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : ""
-  const password = typeof body.password === "string" ? body.password : ""
-  const role = typeof body.role === "string" ? body.role : "staff"
+  const nama = typeof body.nama === "string" ? body.nama.trim() : ""
 
-  if (!fullname || fullname.length > 191 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 191) {
-    return NextResponse.json({ error: "Nama atau email tidak valid." }, { status: 400 })
+
+  if (!nama) {
+    return NextResponse.json({ error: "Nama facility wajib diisi." }, { status: 400 })
   }
 
-  if (password.length < 8) {
-    return NextResponse.json({ error: "Password minimal 8 karakter." }, { status: 400 })
-  }
-
-  if (role !== "admin" && role !== "staff") {
-    return NextResponse.json({ error: "Role tidak valid." }, { status: 400 })
-  }
-
-  if (!process.env.JWT_SECRET) {
-    return NextResponse.json({ error: "JWT_SECRET belum diatur." }, { status: 500 })
-  }
+  
 
   try {
-    const passwordHash = await hashUserPassword(password)
 
-      const user = await prisma.$transaction(async (transaction) => {
+      const facility = await prisma.$transaction(async (transaction) => {
   // Kirim transaction DAN role ke dalam fungsi
-  const kodeUser = await generateKodeUser(transaction, role)
+  const kodeFacility = await generateKodeFacility(transaction)
 
-  const created = await transaction.user.create({
-    data: { kodeUser, fullname, email, password: passwordHash, role },
+  const created = await transaction.facility.create({
+    data: { kodeFacility, nama },
   })
 
-      const token = createUserJwt(created)
-
-      return transaction.user.update({
-        where: { id: created.id },
-        data: { token },
-        select: userFields,
+      return transaction.facility.update({
+        data: { kodeFacility, nama, },
+        select: facilityFields,
       })
     })
 
-    const { token, ...safeUser } = user
 
     return NextResponse.json({
-      user: { ...safeUser, hasToken: Boolean(token) },
-    }, { status: 201 })
-  } catch (error) {
-    if (isDuplicateEmail(error)) {
-      return NextResponse.json({ error: "Email sudah digunakan." }, { status: 409 })
-    }
-
-    console.error("Failed to create user:", error)
-
-    return NextResponse.json(
-      { error: "Gagal membuat user. Periksa koneksi database." },
-      { status: 500 }
+          user: { ...safeUser, hasToken: Boolean(token) },
+        }, { status: 201 })
+      } catch (error) {
+        if (isDuplicateEmail(error)) {
+          return NextResponse.json({ error: "Email sudah digunakan." }, { status: 409 })
+        }
+    
+        console.error("Failed to create user:", error)
+    
+        return NextResponse.json(
+          { error: "Gagal membuat user. Periksa koneksi database." },
+          { status: 500 }
     )
   }
 }
