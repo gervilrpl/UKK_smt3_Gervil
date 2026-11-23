@@ -23,6 +23,11 @@ const listMenu = [
     "url": "/admin/user-management",
     "icon": UserRound
   },
+  {
+    "name": "Facility",
+    "url": "/admin/facility",
+    "icon": UserRound
+  },
 
 ]
 
